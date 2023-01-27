@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-// import {DEFAULT_FUNCTION} from "../../helpers/constants";
 import './Input.css';
 
 const generateClasses = (isValid, additionalClassName) => {
