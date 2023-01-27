@@ -1,0 +1,9 @@
+.input {
+    border: 1px solid transparent;
+    border-radius: var(--border-radius);
+    outline: none;
+}
+
+.input--invalid {
+    border-color: var(--alarm-color);
+}
