@@ -14,15 +14,6 @@ const isMaxLengthValid = (value, limit) => value.length <= limit;
   
 const isMinLengthValid = (value, limit) => value.length >= limit;
 
-const getError = (fieldName, message) => ({fieldName, message})
-
-/* 
-errors 
-
-[{fieldName: 'fieldName or `general`', message: 'error text'}]
-
-*/
-
 const formValidator = (fields) => {
     return (fieldName, fieldValue) => {
         const validateField = fields.find(item => item.name === fieldName);
@@ -33,24 +24,20 @@ const formValidator = (fields) => {
         }
 
         const errors = [];
-        let isValid = true;
 
         if(validateField.isEmail && !isEmailValid(fieldValue)) {
-           isValid = false; 
-           errors.push(getError(fieldName, 'Invalid email'));
+           errors.push('Invalid email');
         }
 
         if(validateField.minLength && !isMinLengthValid(fieldValue, validateField.minLength)) {
-            isValid = false;
-            errors.push(getError(fieldName, `Min length is ${validateField.minLength}`));
+            errors.push(`Min length is ${validateField.minLength}`);
         }
         
         if(validateField.maxLength && !isMaxLengthValid(fieldValue, validateField.maxLength)) {
-            isValid = false;
-            errors.push(getError(fieldName,`Max length is ${validateField.maxLength}`));
+            errors.push(`Max length is ${validateField.maxLength}`);
         }
 
-        return [isValid, errors];
+        return errors;
     }
 }
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import Button from 'components/Button';
 import Input from 'components/Input';
 import formValidator from 'helpers/formValidator';
@@ -21,54 +22,84 @@ const initialFieldsData = {
     password: {value: '', errors: []}
 };
 
+const AuthFormTextItem = ({label, name, errors, required=false, type='text', value, onInput}) => 
+(<label className="auth-form-item">
+    <span className="auth-form-item__label auth-form-item__label--required">{label}</span>
+    <Input
+        className="auth-form-item__input"
+        name={name}
+        required={required}
+        type={type}
+        valid={errors.length === 0}
+        value={value}
+        onInput={onInput}
+    />
+    {errors.length > 0 && 
+        errors.length === 1 ? <span className="auth-form-item__error">{errors[0]}</span> :
+        <ul className="auth-form-item__errors">
+            {errors.map((error, i) => <li className="auth-form-item__error" key={i}>{error}</li>)}
+        </ul>
+    }
+</label>);
+
 const AuthForm = ({onSignIn}) => {
+    const navigate = useNavigate();
     const [fieldsData, setFieldsData] = useState(initialFieldsData);
+    const [authError, setAuthError] = useState(null);
 
     const onFieldInput = (event) => {
         const {target: {name, value}} = event;
-        const [isValid, errors] = fieldValidate(name, value);
+        const errors = fieldValidate(name, value);
 
         setFieldsData(prevData => ({...prevData, [name]: {value, errors}}))
-        console.log(isValid, errors);
     }
 
-    const onSubmit = (event) => {
+    const onSubmit = async (event) => {
         event.preventDefault();
-        fetch(`/auth-user?email=${fieldsData.email.value}`, {method: 'GET'})
-            .then((response) => response.json())
-            .then((data) => console.log('data', data))
-            .catch(error => console.log('error', error));
+
+        try {
+            const response = await fetch(`/auth-user?email=${fieldsData.email.value}`, {method: 'GET'});
+
+            if(response.status === 200) {
+                const {email} = await response.json();
+                
+                document.cookie = `username=${email}`;
+                navigate("/", {replace: true});
+            } else {
+                let error = new Error(response.statusText);
+
+                error.response = response
+                throw error
+            }
+        } catch(error) {      
+              const {error: errorText} = await error.response.json();
+
+              setAuthError(errorText || error.response.statusText)
+        }
     }
 
     return <form id="authForm" className="auth-form" onSubmit={onSubmit}>
-        <label className="auth-form__item">
-            <span className="auth-form__label auth-form__label--required">Email</span>
-            <Input
-                className='auth-form__input'
-                name="email"
-                placeholder="example@mail.com"
-                required
-                type="email"
-                valid={fieldsData.email.errors.length === 0}
-                value={fieldsData.email.value}
-                onInput={onFieldInput}
-            />
-        </label>
-        <label className="auth-form__item">
-            <span className="auth-form__label auth-form__label--required">Password</span>
-            <Input
-                className='auth-form__input'
-                name="password"
-                required
-                type="password"
-                valid={fieldsData.password.errors.length === 0}
-                value={fieldsData.password.value}
-                onInput={onFieldInput}
-            />
-        </label>
+        <AuthFormTextItem 
+            label="Email"
+            name="email"
+            errors={fieldsData.email.errors}
+            required
+            value={fieldsData.email.value}
+            onInput={onFieldInput}
+        />
+        <AuthFormTextItem 
+            label="Password"
+            name="password"
+            errors={fieldsData.password.errors}
+            required
+            type="password"
+            value={fieldsData.password.value}
+            onInput={onFieldInput}
+        />
+        {authError && <div className="auth-form__error">{authError}</div>}
         <div className="auth-form__actions">
             <Button 
-                className='auth-form__action auth-form__action--submit' 
+                className="auth-form__action auth-form__action--submit"
                 type="submit"
             >
                 Sign In
