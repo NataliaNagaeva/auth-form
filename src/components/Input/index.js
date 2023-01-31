@@ -19,7 +19,6 @@ const Input = ({className = "", type="text", name="", placeholder="", required=f
     const [classes, setClasses] = useState(generateClasses(valid, className));
 
     useEffect(() => {
-        console.log(valid, className)
         setClasses(generateClasses(valid, className));
     }, [valid, className]);
 

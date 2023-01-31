@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Button from 'components/Button';
 import Input from 'components/Input';
 import formValidator from 'helpers/formValidator';
+import cookie from 'helpers/cookie';
 import './AuthForm.css';
 
 const fieldValidate = formValidator([
@@ -42,7 +43,7 @@ const AuthFormTextItem = ({label, name, errors, required=false, type='text', val
     }
 </label>);
 
-const AuthForm = ({onSignIn}) => {
+const AuthForm = ({setUsername}) => {
     const navigate = useNavigate();
     const [fieldsData, setFieldsData] = useState(initialFieldsData);
     const [authError, setAuthError] = useState(null);
@@ -56,14 +57,16 @@ const AuthForm = ({onSignIn}) => {
 
     const onSubmit = async (event) => {
         event.preventDefault();
+        setAuthError(null);
 
         try {
             const response = await fetch(`/auth-user?email=${fieldsData.email.value}`, {method: 'GET'});
 
             if(response.status === 200) {
-                const {email} = await response.json();
-                
-                document.cookie = `username=${email}`;
+                const {email, token} = await response.json();
+
+                cookie.set('token', token, 1/24);
+                setUsername(email);
                 navigate("/", {replace: true});
             } else {
                 let error = new Error(response.statusText);
@@ -71,10 +74,16 @@ const AuthForm = ({onSignIn}) => {
                 error.response = response
                 throw error
             }
-        } catch(error) {      
-              const {error: errorText} = await error.response.json();
+        } catch(error) {
+              let errorText = error.statusText;
 
-              setAuthError(errorText || error.response.statusText)
+              if(error.response) {
+                const errorData = await error.response.json();
+                
+                errorText = errorData.error || error.response.statusText;
+              }
+
+              setAuthError(errorText)
         }
     }
 
